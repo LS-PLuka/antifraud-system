@@ -1,0 +1,14 @@
+# Variáveis de ambiente
+.env
+
+# Docker
+docker-compose.override.yml
+
+# Sistemas operacionais
+.DS_Store
+Thumbs.db
+
+# IDEs
+.idea/
+.vscode/
+*.iml
