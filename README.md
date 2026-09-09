@@ -37,8 +37,6 @@ Toda fintech precisa decidir, em milissegundos, se uma transação é legítima 
 
 A solução: a transação é recebida e registrada imediatamente. Em paralelo, um motor de risco analisa os dados de forma assíncrona, aplica regras de negócio e classifica o risco. O histórico de cada decisão fica registrado para auditoria.
 
-Essa é exatamente a arquitetura usada por empresas como Nubank, PicPay e produtos como Konduto e ClearSale.
-
 ---
 
 ## Arquitetura
@@ -182,8 +180,6 @@ As decisões de arquitetura estão documentadas em [`docs/adr/`](docs/adr/):
 - [ADR-003 — PostgreSQL no servico-transacao](docs/adr/003-postgresql.md)
 - [ADR-004 — MongoDB no servico-auditoria](docs/adr/004-mongodb.md)
 - [ADR-005 — Cadeia de Responsabilidade no motor-risco](docs/adr/005-chain-of-responsibility.md)
-
-> ADR (Architecture Decision Record) é um documento curto que registra uma decisão técnica importante, o motivo da escolha e as alternativas consideradas. Ter isso no repositório demonstra que você pensa em arquitetura — não só em código.
 
 ---
 
