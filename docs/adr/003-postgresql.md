@@ -1,23 +1,16 @@
 # ADR-003 — PostgreSQL no servico-transacao
 
 ## Contexto
-O `servico-transacao` precisa persistir transações financeiras. Esses dados são estruturados, têm campos bem definidos e exigem consistência garantida — não é aceitável ter uma transação salva pela metade ou com dados corrompidos.
+
+O `servico-transacao` persiste usuários e transações financeiras estruturadas, com relacionamentos e necessidade de consistência transacional.
 
 ## Decisão
-O `servico-transacao` usa PostgreSQL como banco de dados relacional.
+
+O `servico-transacao` usa PostgreSQL 16 como seu banco exclusivo, acessado por Spring Data JPA. No ambiente central, o banco se chama `antifraude` e as credenciais são compartilhadas pelo Compose por `DB_USERNAME` e `DB_PASSWORD`.
 
 ## Consequências
 
-**Positivas:**
-- Consistência transacional garantida (ACID)
-- Schema bem definido evita dados inconsistentes
-- Suporte nativo a transações com Spring Data JPA
-
-**Negativas:**
-- Menos flexível para mudanças de schema em comparação a bancos NoSQL
-- Necessidade de migrations em alterações de estrutura (atualmente gerenciado por `ddl-auto=update`)
-
-## Alternativas consideradas
-**MongoDB:** descartado para este serviço porque os dados são estruturados e relacionais. Usar MongoDB aqui seria escolha por modismo, não por adequação técnica.
-
-**MySQL:** considerado, mas PostgreSQL foi preferido por ser mais robusto, ter melhor suporte a tipos de dados avançados e ser o padrão mais adotado no ecossistema Spring Boot moderno.
+- O serviço possui persistência relacional e transacional para seu próprio domínio.
+- O schema é gerenciado pela configuração atual do serviço.
+- `motor-risco` e `servico-auditoria` não acessam o PostgreSQL; recebem os dados necessários nos eventos RabbitMQ.
+- O Compose mantém os dados no volume `postgres_data`.

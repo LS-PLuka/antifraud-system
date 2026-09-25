@@ -1,20 +1,16 @@
 # ADR-004 — MongoDB no servico-auditoria
 
 ## Contexto
-O `servico-auditoria` precisa registrar o histórico de decisões do motor de risco. Cada registro contém uma lista de regras disparadas que varia de transação para transação — uma pode disparar 2 regras, outra pode disparar 5. Além disso, registros de auditoria são imutáveis: nunca são atualizados, apenas criados.
+
+Cada resultado de risco é um registro autocontido com score, classificação, lista variável de regras disparadas e timestamps. A auditoria recebe esses resultados de forma assíncrona e os disponibiliza somente para leitura.
 
 ## Decisão
-O `servico-auditoria` usa MongoDB como banco de dados orientado a documentos.
+
+O `servico-auditoria` usa MongoDB 7 como seu banco exclusivo. Os documentos são persistidos na coleção `auditorias`, no banco `antifraude`, sem autenticação MongoDB nesta versão. Cada documento contém o resultado recebido e acrescenta `registradoEm`.
 
 ## Consequências
 
-**Positivas:**
-- Estrutura flexível de documento acomoda listas de tamanho variável sem tabelas auxiliares
-- Padrão append-only é natural em bancos de documentos
-- Sem necessidade de joins — cada documento é autocontido
-
-**Negativas:**
-- Sem garantias ACID por padrão (aceitável aqui, pois auditoria não exige consistência transacional entre documentos)
-
-## Alternativas consideradas
-**PostgreSQL:** possível, mas exigiria uma tabela separada para as regras disparadas com chave estrangeira, aumentando a complexidade das queries sem benefício real para esse caso de uso.
+- A lista de regras disparadas é armazenada no mesmo documento da decisão.
+- O serviço consulta seu próprio histórico sem depender do PostgreSQL.
+- A escrita de auditorias ocorre apenas pelo consumo de `risco.resultados`; a API REST é somente leitura.
+- O Compose mantém os dados no volume `mongodb_data`.

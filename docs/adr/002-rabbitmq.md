@@ -1,28 +1,22 @@
 # ADR-002 — RabbitMQ como sistema de mensageria
 
 ## Contexto
-Os microsserviços precisam se comunicar. A análise de risco não precisa acontecer de forma síncrona — o cliente não precisa esperar o resultado para receber a confirmação de que a transação foi registrada. Comunicação via HTTP direto entre serviços cria acoplamento: se o `motor-risco` cair, o `servico-transacao` falharia junto.
+
+A entrada da transação não precisa aguardar a análise de risco nem o registro da auditoria. Chamadas HTTP internas acoplariam a disponibilidade dos três serviços.
 
 ## Decisão
-Toda comunicação entre serviços é feita de forma assíncrona via RabbitMQ.
 
-- O `servico-transacao` publica eventos na fila `transacoes.analise`
-- O `motor-risco` publica resultados na fila `risco.resultados`
+A comunicação interna é exclusivamente assíncrona via RabbitMQ 3.13, com exchanges diretas e filas duráveis declaradas pelos próprios microsserviços por Spring AMQP:
 
-Nenhum serviço chama outro diretamente via HTTP.
+- `servico-transacao` publica em `transacoes.exchange`, routing key `transacoes.risco`, para `transacoes.analise`;
+- `motor-risco` consome `transacoes.analise` e publica em `risco.exchange`, routing key `risco.resultado`, para `risco.resultados`;
+- `servico-auditoria` consome `risco.resultados`.
+
+O Docker Compose fornece somente o broker; não declara manualmente a topologia.
 
 ## Consequências
 
-**Positivas:**
-- Serviços completamente desacoplados — nenhum conhece o endereço do outro
-- Resiliência: se um serviço cair, as mensagens ficam na fila até ele voltar
-- Escalabilidade: múltiplas instâncias do `motor-risco` podem consumir a mesma fila sem alterar nenhum outro serviço
-
-**Negativas:**
-- Maior dificuldade para rastrear o fluxo completo de uma transação
-- Complexidade adicional na configuração do ambiente local
-
-## Alternativas consideradas
-**Chamada HTTP direta (REST):** descartado por criar acoplamento forte entre serviços e eliminar a resiliência a falhas.
-
-**Apache Kafka:** considerado, mas descartado para a versão inicial. Kafka é mais adequado para volumes muito altos e persistência longa de eventos. RabbitMQ atende bem ao caso de uso atual e é mais simples de operar.
+- O cliente recebe a confirmação da transação sem esperar toda a cadeia.
+- Os microsserviços não conhecem endereços HTTP uns dos outros.
+- Os contratos JSON e os nomes da topologia são interfaces de integração que precisam permanecer compatíveis.
+- O resultado de auditoria fica disponível após o processamento assíncrono.

@@ -1,24 +1,24 @@
 # ADR-005 — Padrão Cadeia de Responsabilidade no motor-risco
 
 ## Contexto
-O `motor-risco` precisa aplicar um conjunto de regras de risco sobre cada transação. O número de regras vai crescer com o tempo. É necessário que cada regra possa ser testada isoladamente, que novas regras possam ser adicionadas sem modificar as existentes, e que o resultado acumule as contribuições de todas as regras disparadas.
+
+Uma transação pode satisfazer simultaneamente várias condições de risco. Cada condição precisa ser avaliada isoladamente, e seus pontos devem ser acumulados antes da classificação final.
 
 ## Decisão
-As regras de risco são implementadas usando o padrão de projeto Cadeia de Responsabilidade (Chain of Responsibility). Cada regra é uma classe independente que avalia uma condição, adiciona pontos ao contexto se necessário, e passa o contexto para a próxima regra da cadeia.
+
+O `motor-risco` implementa as cinco regras com Chain of Responsibility, em ordem explícita:
+
+1. `RegraValorAlto`;
+2. `RegraContaNova`;
+3. `RegraHorarioSuspeito`;
+4. `RegraValorMuitoAltoContaNova`;
+5. `RegraPaisEstrangeiro`.
+
+Cada regra avalia sua condição, registra nome e pontos quando disparada e sempre encaminha o mesmo contexto para a próxima. Ao fim da cadeia, o score acumulado define `APROVADA` (0–39), `SINALIZADA` (40–69) ou `BLOQUEADA` (70 ou mais).
 
 ## Consequências
 
-**Positivas:**
-- Cada regra é completamente independente e testável de forma isolada
-- Adicionar uma nova regra não requer modificar nenhuma regra existente — implementa o Princípio Aberto/Fechado do SOLID
-- A lógica de cada regra fica encapsulada em sua própria classe
-- A ordem de avaliação é explícita e controlada na montagem da cadeia
-
-**Negativas:**
-- Ligeiramente mais complexo que um bloco de if/else para quem não conhece o padrão
-- A cadeia precisa ser montada explicitamente no serviço principal
-
-## Alternativas consideradas
-**Sequência de if/else:** descartado porque misturaria todas as regras em um único método, dificultando testes isolados e violando o Princípio de Responsabilidade Única do SOLID.
-
-**Strategy Pattern:** considerado, mas a Cadeia de Responsabilidade é mais adequada porque permite que múltiplas regras sejam avaliadas em sequência e acumulem resultado, enquanto o Strategy seleciona apenas uma estratégia por vez.
+- As regras são cumulativas e testáveis de forma isolada.
+- A ordem da cadeia é determinística.
+- A classificação acontece uma vez, depois que todas as cinco regras foram avaliadas.
+- O motor publica um único resultado com `pontuacao`, `nivel`, `regrasDisparadas` e `analisadoEm`.
