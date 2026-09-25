@@ -25,7 +25,7 @@ Sistema antifraude distribuído composto por três microsserviços. As transaç�
 - [Contratos RabbitMQ](#contratos-rabbitmq)
 - [Como executar](#como-executar)
 - [Recursos disponíveis](#recursos-disponíveis)
-- [Validação E2E](#validação-e2e)
+- [Como testar o sistema completo](#como-testar-o-sistema-completo)
 - [Configuração](#configuração)
 - [Stack](#stack)
 - [Status do projeto](#status-do-projeto)
@@ -150,7 +150,20 @@ make clean
 
 O painel do RabbitMQ usa as credenciais definidas por `RABBITMQ_USERNAME` e `RABBITMQ_PASSWORD` (`guest` / `guest` no exemplo). O `motor-risco` não publica porta HTTP no host.
 
-## Validação E2E
+## Como testar o sistema completo
+
+O teste manual comprova o fluxo completo:
+
+```text
+Swagger do servico-transacao
+    -> PostgreSQL
+    -> transacoes.analise
+    -> motor-risco
+    -> risco.resultados
+    -> servico-auditoria
+    -> MongoDB
+    -> Swagger do servico-auditoria
+```
 
 1. Suba o Compose e aguarde os containers ficarem prontos.
 2. Registre um usuário comum em `POST /auth/registro` no `servico-transacao`.
@@ -161,7 +174,9 @@ O painel do RabbitMQ usa as credenciais definidas por `RABBITMQ_USERNAME` e `RAB
 7. Consulte `GET /auditorias/transacao/{transacaoId}` em `http://localhost:8082`.
 8. Confira `pontuacao`, `nivel`, `regrasDisparadas`, `analisadoEm` e `registradoEm`.
 
-Durante o desenvolvimento, o RabbitMQ Management permite inspecionar `transacoes.analise` e `risco.resultados` enquanto as mensagens atravessam o sistema.
+O guia [Testes manuais do sistema completo](docs/testes-manuais.md) contém o passo a passo pelo Swagger, todos os JSONs e os resultados esperados para transações `APROVADA`, `SINALIZADA` e `BLOQUEADA`.
+
+Durante o teste, o RabbitMQ Management permite inspecionar `transacoes.analise` e `risco.resultados` enquanto as mensagens atravessam o sistema.
 
 ## Configuração
 
@@ -206,7 +221,7 @@ O `.env` central fornece as credenciais compartilhadas pelo Compose. Os hostname
 | motor-risco | Concluído |
 | servico-auditoria | Concluído |
 | Docker Compose | Implementado |
-| Integração central | Pronta para validação E2E |
+| Integração central | Validada E2E com o Docker Compose completo |
 
 ## Decisões de arquitetura
 
